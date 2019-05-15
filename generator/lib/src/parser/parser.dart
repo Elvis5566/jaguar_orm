@@ -7,6 +7,7 @@ import 'package:analyzer/dart/constant/value.dart';
 
 import 'package:jaguar_orm_gen/src/common/common.dart';
 import 'package:jaguar_orm_gen/src/model/model.dart';
+import 'package:analyzer/src/dart/resolver/inheritance_manager.dart';
 
 class FieldParseException implements Exception {
   dynamic inner;
@@ -302,8 +303,17 @@ class ParsedBean {
       }
     }
 
+    // ignore: deprecated_member_use
+    final manager = InheritanceManager(modelClass.library);
+
+    // ignore: deprecated_member_use
+    final superFields = manager.getMembersInheritedFromClasses(modelClass).values
+        .where((e) => e is PropertyAccessorElement)
+        .map((e) => (e as PropertyAccessorElement).variable).toList();
+
+    List allFields = [...modelClass.fields, ...superFields];
     /// Parse getters, setters and fields in model
-    for (FieldElement field in modelClass.fields) {
+    for (PropertyInducingElement field in allFields) {
       try {
         if (fields.containsKey(field.name)) continue;
         if (relations.contains(field.name)) continue;
@@ -331,17 +341,17 @@ class ParsedBean {
           fields[val.field] = val;
           if (val.isPrimary) primaries.add(val);
         } else {
-          if (!_relation(clazz.type, field)) {
-            final vf = Field(field.type.name, field.name, field.name,
-                unique: null,
-                length: null,
-                autoIncrement: false,
-                isNullable: false,
-                foreign: null,
-                isPrimary: false,
-                isFinal: field.isFinal && field.getter.isSynthetic);
-            fields[vf.field] = vf;
-          }
+//          if (!_relation(clazz.type, field)) {
+//            final vf = Field(field.type.name, field.name, field.name,
+//                unique: null,
+//                length: null,
+//                autoIncrement: false,
+//                isNullable: false,
+//                foreign: null,
+//                isPrimary: false,
+//                isFinal: field.isFinal && field.getter.isSynthetic);
+//            fields[vf.field] = vf;
+//          }
         }
       } catch (e, s) {
         throw FieldParseException(field.name, e, s);
