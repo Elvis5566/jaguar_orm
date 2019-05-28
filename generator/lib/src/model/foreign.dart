@@ -25,6 +25,23 @@ class BelongsToForeign implements Foreign {
   String get beanInstanceName => uncap(modelName) + 'Bean';
 }
 
+class ToOneForeign implements Foreign {
+  final DartType bean;
+
+  final String refCol;
+
+  final DartType model;
+
+  ToOneForeign(this.bean, this.refCol)
+      : model = getModelForBean(bean);
+
+  String get beanName => bean.name;
+
+  String get modelName => model.name;
+
+  String get beanInstanceName => uncap(modelName) + 'Bean';
+}
+
 /*
 class BeanedForeign implements Foreign {
   final DartType bean;

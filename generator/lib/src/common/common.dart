@@ -21,6 +21,8 @@ final isForeignKey = new TypeChecker.fromRuntime(ForeignKey);
 
 final isBelongsTo = new TypeChecker.fromRuntime(BelongsTo);
 
+final isToOne = new TypeChecker.fromRuntime(ToOne);
+
 final isRelation = new TypeChecker.fromRuntime(Relation);
 
 final isHasOne = new TypeChecker.fromRuntime(HasOne);

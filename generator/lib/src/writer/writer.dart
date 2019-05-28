@@ -58,6 +58,12 @@ class Writer {
 
     _writePreloadAll();
 
+    _writeBuildJoinInfoList();
+
+    _writeFromAliasMap();
+
+    _writeSave();
+
     _writeBeans();
 
     _w.writeln('}');
@@ -85,7 +91,7 @@ class Writer {
     _w.writeln(');');
 
     _b.fields.values.forEach((Field field) {
-      if (!field.isFinal) {
+      if (!field.isFinal && !_isToOneForeign(field)) {
         _w.writeln(
             "model.${field.field} = adapter.parseValue(map['${_camToSnak(field.colName)}']);");
       }
@@ -125,6 +131,9 @@ class Writer {
       if (f.foreign != null) {
         final foreign = f.foreign;
         if (foreign is BelongsToForeign) {
+          _write(', foreignTable: ${foreign.beanInstanceName}.tableName');
+          _write(", foreignCol: '${foreign.refCol}'");
+        } else if (foreign is ToOneForeign) {
           _write(', foreignTable: ${foreign.beanInstanceName}.tableName');
           _write(", foreignCol: '${foreign.refCol}'");
         } else {
@@ -169,7 +178,13 @@ class Writer {
       if (field.autoIncrement) {
         _w.writeln("if(model.${field.field} != null) {");
       }
-      _w.writeln("ret.add(${field.field}.set(model.${field.field}));");
+
+      if (_isToOneForeign(field)) {
+        _w.writeln("ret.add(${field.field}.set(model.${field.field} != null ? model.${field.field}.${field.foreign.refCol} : null));");
+      } else {
+        _w.writeln("ret.add(${field.field}.set(model.${field.field}));");
+      }
+
       if (field.autoIncrement) {
         _w.writeln("}");
       }
@@ -182,8 +197,15 @@ class Writer {
       if (field.autoIncrement) {
         _w.writeln("if(model.${field.field} != null) {");
       }
-      _w.writeln(
-          "if(only.contains(${field.field}.name)) ret.add(${field.field}.set(model.${field.field}));");
+
+      if (_isToOneForeign(field)) {
+        _w.writeln(
+            "if(only.contains(${field.field}.name)) ret.add(${field.field}.set(model.${field.field} != null ? model.${field.field}.${field.foreign.refCol} : null));");
+      } else {
+        _w.writeln(
+            "if(only.contains(${field.field}.name)) ret.add(${field.field}.set(model.${field.field}));");
+      }
+
       if (field.autoIncrement) {
         _w.writeln("}");
       }
@@ -194,7 +216,12 @@ class Writer {
     // TODO if update, don't set primary key
     _b.fields.values.forEach((Field field) {
       _w.writeln("if(model.${field.field} != null) {");
-      _w.writeln("ret.add(${field.field}.set(model.${field.field}));");
+      if (_isToOneForeign(field)) {
+        _w.writeln("ret.add(${field.field}.set(model.${field.field}.${field.foreign.refCol}));");
+      } else {
+        _w.writeln("ret.add(${field.field}.set(model.${field.field}));");
+      }
+
       _w.writeln("}");
     });
 
@@ -203,6 +230,10 @@ class Writer {
     _w.writeln();
     _w.writeln('return ret;');
     _w.writeln('}');
+  }
+
+  bool _isToOneForeign(Field field) {
+    return field.foreign != null && field.foreign is ToOneForeign;
   }
 
   void _writeCrud() {
@@ -910,6 +941,15 @@ class Writer {
         _write(' get ');
         _write(fb.beanInstanceName);
         _writeln(';');
+      } else if (_isToOneForeign(f)) {
+        ToOneForeign fb = f.foreign;
+        if (written.contains(fb.beanInstanceName)) continue;
+        written.add(fb.beanInstanceName);
+
+        _write(fb.beanName);
+        _write(' get ');
+        _write(fb.beanInstanceName);
+        _writeln(';');
       }
     }
   }
@@ -1033,6 +1073,41 @@ class Writer {
       return this.upsert(ret);
     }
     ''');
+    _writeln('}');
+  }
+
+  void _writeBuildJoinInfoList() {
+    _writeln('List<JoinInfo> buildJoinInfoList(String aliasTableName) {');
+    _writeln('return [');
+    _b.toOnes.forEach((f) {
+      String beanInstanceName = (f.foreign as ToOneForeign).beanInstanceName;
+      _writeln('JoinInfo(aliasTableName, ${f.field}, $beanInstanceName, $beanInstanceName.${f.foreign.refCol}),');
+    });
+    _writeln('];');
+    _writeln('}');
+  }
+
+  void _writeFromAliasMap() {
+    _writeln('${_b.modelType} fromAliasMap(Map map, String aliasTableName) {');
+    _writeln('${_b.modelType} r = fromMap(RedirectMap(aliasTableName, map));');
+
+    if (_b.toOnes.length > 0) {
+      _writeln('final jInfoList = buildJoinInfoList(aliasTableName);');
+      _b.toOnes.asMap().forEach((index, f) {
+        _writeln('r.${f.field} = jInfoList[$index].childBean.fromAliasMap(map, jInfoList[$index].childAliasTableName);');
+      });
+    }
+
+    _writeln('return r;');
+    _writeln('}');
+  }
+
+  void _writeSave() {
+    _writeln('Future<void> save(${_b.modelType} model) async {');
+    _b.toOnes.asMap().forEach((index, f) {
+      _writeln('await model.${f.field}?.save();');
+    });
+    _writeln('await upsert(model);');
     _writeln('}');
   }
 

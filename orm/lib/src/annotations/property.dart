@@ -99,6 +99,32 @@ class ForeignKey implements ForeignBase {
       this.length});
 }
 
+class ToOne implements ForeignBase {
+  final Type bean;
+
+  /// Name of the column in database
+  final String name;
+
+  final bool isNullable;
+
+  final String uniqueGroup;
+
+  final bool auto = false;
+
+  final int length;
+
+  /// The field/column in the foreign bean
+  final String refCol;
+
+  const ToOne(this.bean,
+      {this.name,
+        this.isNullable = false,
+        this.uniqueGroup,
+        this.length,
+        this.refCol = 'id'});
+
+}
+
 class BelongsTo implements ForeignBase {
   final Type bean;
 

@@ -64,6 +64,8 @@ class ParsedBean {
 
   final primaries = <Field>[];
 
+  final toOnes = <Field>[];
+
   final beanedAssociations = <DartType, BelongsToAssociation>{};
 
   final beanedForeignAssociations = <DartType, BeanedForeignAssociation>{};
@@ -210,7 +212,7 @@ class ParsedBean {
     }
 
     final ret = WriterModel(clazz.name, model.name, fields, primaries,
-        beanedAssociations, beanedForeignAssociations, preloads);
+        beanedAssociations, beanedForeignAssociations, preloads, toOnes);
 
     if (doRelations) {
       for (Preload p in preloads) {
@@ -314,6 +316,7 @@ class ParsedBean {
     List allFields = [...modelClass.fields, ...superFields];
     /// Parse getters, setters and fields in model
     for (PropertyInducingElement field in allFields) {
+      print("field: ${field.name}");
       try {
         if (fields.containsKey(field.name)) continue;
         if (relations.contains(field.name)) continue;
@@ -340,6 +343,9 @@ class ParsedBean {
         if (val is Field) {
           fields[val.field] = val;
           if (val.isPrimary) primaries.add(val);
+          if (val.foreign is ToOneForeign) {
+            toOnes.add(val);
+          }
         } else {
 //          if (!_relation(clazz.type, field)) {
 //            final vf = Field(field.type.name, field.name, field.name,
@@ -490,6 +496,27 @@ Field parseColumn(FieldElement f, DartObject obj) {
 
     Foreign fore = BelongsToForeign(bean, refCol, byHasMany, toMany);
     return Field(f.type.name, f.name, colName,
+        isNullable: isNullable,
+        isPrimary: false,
+        foreign: fore,
+        autoIncrement: autoIncrement,
+        length: length,
+        unique: unique,
+        isFinal: f.isFinal);
+  } else if (isToOne.isAssignableFromType(obj.type)) {
+    final DartType bean = obj.getField('bean').toTypeValue();
+    final String refCol = obj.getField('refCol').toStringValue();
+
+    if (!isBean.isAssignableFromType(bean)) {
+      throw Exception("Non-bean type provided!");
+    }
+
+    Foreign fore = ToOneForeign(bean, refCol);
+    final WriterModel info = ParsedBean(bean.element, doRelations: false).detect();
+
+    print("ToOne primary key type: ${info.primary.first.type}, field: ${f.name}");
+
+    return Field(info.primary.first.type, f.name, colName ?? "${f.name}_$refCol",
         isNullable: isNullable,
         isPrimary: false,
         foreign: fore,
