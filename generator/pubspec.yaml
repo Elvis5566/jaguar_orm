@@ -17,8 +17,7 @@ dependencies:
     git:
       url: https://github.com/Elvis5566/jaguar_orm.git
       path: orm
-  #      ref: dev
-#  jaguar_orm:
+      ref: bb73ee80dc01d37f731080127927526773a9151d
 #    path: jaguar_orm/
   analyzer: ^0.35.4
   build: ^1.1.3
