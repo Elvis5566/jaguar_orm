@@ -5,6 +5,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:jaguar_orm_gen/src/common/common.dart';
 
 part 'association.dart';
+
 part 'foreign.dart';
 
 class Field {
@@ -47,6 +48,34 @@ class Field {
       : colName = colName ?? field;
 }
 
+class ObjectField extends Field {
+  String serializerName;
+  String deserializerName;
+
+  ObjectField(String type, String field, String colName,
+      {@required this.serializerName,
+      @required this.deserializerName,
+      @required bool isNullable,
+      @required bool autoIncrement,
+      @required int length,
+      @required bool isPrimary,
+      @required Foreign foreign,
+      @required String unique,
+      @required bool isFinal})
+      : super(
+          type,
+          field,
+          colName,
+          isNullable: isNullable,
+          autoIncrement: autoIncrement,
+          length: length,
+          isPrimary: isPrimary,
+          foreign: foreign,
+          unique: unique,
+          isFinal: isFinal,
+        );
+}
+
 class WriterModel {
   final String name;
 
@@ -72,8 +101,15 @@ class WriterModel {
   Field fieldByColName(String colName) => fields.values
       .firstWhere((Field f) => f.colName == colName, orElse: () => null);
 
-  WriterModel(this.name, this.modelType, this.fields, this.primary,
-      this.belongTos, this.beanedForeignAssociations, this.preloads, this.toOnes);
+  WriterModel(
+      this.name,
+      this.modelType,
+      this.fields,
+      this.primary,
+      this.belongTos,
+      this.beanedForeignAssociations,
+      this.preloads,
+      this.toOnes);
 
   Preload findHasXByAssociation(DartType association) {
     return preloads.firstWhere((p) => p.bean == association,

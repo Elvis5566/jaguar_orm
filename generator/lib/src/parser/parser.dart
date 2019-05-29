@@ -446,6 +446,18 @@ class ParsedBean {
   }
 }
 
+String _getFunctionName(DartObject obj) {
+  final type = obj.type as FunctionType;
+  final executableElement = type.element as ExecutableElement;
+  var name = executableElement.name;
+
+  if (executableElement is MethodElement) {
+    name = '${executableElement.enclosingElement.name}.$name';
+  }
+
+  return name;
+}
+
 Field parseColumn(FieldElement f, DartObject obj) {
   final String colName = obj.getField('name').toStringValue();
   final bool isNullable = obj.getField('isNullable').toBoolValue();
@@ -454,6 +466,20 @@ Field parseColumn(FieldElement f, DartObject obj) {
   final int length = obj.getField('length').toIntValue();
   if (isColumn.isExactlyType(obj.type)) {
     return Field(f.type.name, f.name, colName,
+        isNullable: isNullable,
+        autoIncrement: autoIncrement,
+        length: length,
+        foreign: null,
+        isPrimary: false,
+        unique: unique,
+        isFinal: f.isFinal);
+  } else if (isObjectColumn.isExactlyType(obj.type)) {
+    var serializerName = _getFunctionName(obj.getField('serialize'));
+    var deserializerName = _getFunctionName(obj.getField('deserialize'));
+
+    return ObjectField('String', f.name, colName,
+        serializerName: serializerName,
+        deserializerName: deserializerName,
         isNullable: isNullable,
         autoIncrement: autoIncrement,
         length: length,

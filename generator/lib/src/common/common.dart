@@ -15,6 +15,8 @@ final isColumnBase = new TypeChecker.fromRuntime(ColumnBase);
 
 final isColumn = new TypeChecker.fromRuntime(Column);
 
+final isObjectColumn = new TypeChecker.fromRuntime(ObjectColumn);
+
 final isPrimaryKey = new TypeChecker.fromRuntime(PrimaryKey);
 
 final isForeignKey = new TypeChecker.fromRuntime(ForeignKey);

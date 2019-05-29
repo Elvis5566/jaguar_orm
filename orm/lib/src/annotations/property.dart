@@ -52,6 +52,32 @@ class Column implements ColumnBase {
       this.length});
 }
 
+class ObjectColumn implements ColumnBase {
+  /// Name of the column in database
+  final String name;
+
+  final bool isNullable;
+
+  final String uniqueGroup;
+
+  final bool auto;
+
+  final int length;
+
+  final Function serialize;
+
+  final Function deserialize;
+
+  const ObjectColumn(
+      {this.serialize,
+      this.deserialize,
+      this.name,
+      this.isNullable = false,
+      this.uniqueGroup,
+      this.auto = false,
+      this.length});
+}
+
 /// Annotation to declare a model property as primary key in database table
 class PrimaryKey implements ColumnBase {
   /// Name of the column in database
@@ -118,11 +144,10 @@ class ToOne implements ForeignBase {
 
   const ToOne(this.bean,
       {this.name,
-        this.isNullable = false,
-        this.uniqueGroup,
-        this.length,
-        this.refCol = 'id'});
-
+      this.isNullable = false,
+      this.uniqueGroup,
+      this.length,
+      this.refCol = 'id'});
 }
 
 class BelongsTo implements ForeignBase {

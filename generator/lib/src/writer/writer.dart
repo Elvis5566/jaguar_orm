@@ -92,8 +92,14 @@ class Writer {
 
     _b.fields.values.forEach((Field field) {
       if (!field.isFinal && !_isToOneForeign(field)) {
-        _w.writeln(
-            "model.${field.field} = adapter.parseValue(map['${_camToSnak(field.colName)}']);");
+        if (field is ObjectField) {
+          _w.writeln(
+              "model.${field.field} = ${field.deserializerName}(map['${_camToSnak(field.colName)}']);");
+        } else {
+          _w.writeln(
+              "model.${field.field} = adapter.parseValue(map['${_camToSnak(field.colName)}']);");
+        }
+
       }
     });
 
@@ -181,6 +187,8 @@ class Writer {
 
       if (_isToOneForeign(field)) {
         _w.writeln("ret.add(${field.field}.set(model.${field.field} != null ? model.${field.field}.${field.foreign.refCol} : null));");
+      } else if (field is ObjectField) {
+        _w.writeln("ret.add(${field.field}.set(${field.serializerName}(model.${field.field})));");
       } else {
         _w.writeln("ret.add(${field.field}.set(model.${field.field}));");
       }
@@ -201,6 +209,9 @@ class Writer {
       if (_isToOneForeign(field)) {
         _w.writeln(
             "if(only.contains(${field.field}.name)) ret.add(${field.field}.set(model.${field.field} != null ? model.${field.field}.${field.foreign.refCol} : null));");
+      } else if (field is ObjectField) {
+        _w.writeln(
+            "if(only.contains(${field.field}.name)) ret.add(${field.field}.set(${field.serializerName}(model.${field.field})));");
       } else {
         _w.writeln(
             "if(only.contains(${field.field}.name)) ret.add(${field.field}.set(model.${field.field}));");
@@ -218,6 +229,8 @@ class Writer {
       _w.writeln("if(model.${field.field} != null) {");
       if (_isToOneForeign(field)) {
         _w.writeln("ret.add(${field.field}.set(model.${field.field}.${field.foreign.refCol}));");
+      } else if (field is ObjectField) {
+        _w.writeln("ret.add(${field.field}.set(${field.serializerName}(model.${field.field})));");
       } else {
         _w.writeln("ret.add(${field.field}.set(model.${field.field}));");
       }
