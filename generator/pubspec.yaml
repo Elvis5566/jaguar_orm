@@ -19,7 +19,7 @@ dependencies:
       path: orm
       ref: bb73ee80dc01d37f731080127927526773a9151d
 #    path: jaguar_orm/
-  analyzer: ^0.35.4
+  analyzer:
   build: ^1.1.3
   logging: ^0.11.0
   source_gen: ^0.9.0
