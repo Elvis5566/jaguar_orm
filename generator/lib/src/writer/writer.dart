@@ -81,6 +81,10 @@ class Writer {
 
   void _writeFromMap() {
     _w.writeln('${_b.modelType} fromMap(Map map) {');
+    if (_b.primary.length > 0) {
+      _w.write("if (map['${_camToSnak(_b.primary.first.colName)}'] == null) return null;");
+    }
+
     _w.write('${_b.modelType} model = ${_b.modelType}(');
     _b.fields.values.forEach((Field field) {
       if (field.isFinal) {
@@ -1103,6 +1107,7 @@ class Writer {
   void _writeFromAliasMap() {
     _writeln('${_b.modelType} fromAliasMap(Map map, String aliasTableName) {');
     _writeln('${_b.modelType} r = fromMap(RedirectMap(aliasTableName, map));');
+    _writeln("if (r == null) return null;");
 
     if (_b.toOnes.length > 0) {
       _writeln('final jInfoList = buildJoinInfoList(aliasTableName);');
